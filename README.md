@@ -170,7 +170,7 @@ How it's tested:
   merge and reconciles run; a 20-way autostart race asserting exactly one daemon wins;
   SIGKILL-the-daemon-and-query-immediately recovery.
 
-257 tests, and `cargo test` runs all of them in about 20 seconds.
+259 tests, and `cargo test` runs all of them in about 20 seconds.
 
 ## Limitations
 
@@ -208,7 +208,7 @@ but have had less real-world use. Platform bug reports are especially welcome.
 ## Development
 
 ```sh
-cargo test                              # 257 tests, ~20s
+cargo test                              # 259 tests, ~20s
 cargo test --test daemon                # socket, autostart race, kill recovery
 ./scripts/crash_loop.sh 2000            # kill-9 soak
 cargo run --release -- bench <dir>      # build/open/query/memory report
@@ -217,6 +217,16 @@ cargo run --release -- bench <dir>      # build/open/query/memory report
 MSRV is **1.89** — that's where `File::try_lock` stabilised, and the writer mutex is a real
 OS advisory lock. Formatting isn't gated in CI; the code is hand-formatted and
 `rustfmt.toml` is a hint, not a rule. Clippy is gated with `-D warnings`.
+
+## Contributing
+
+Bug reports, especially platform ones, are the most useful thing right now — see
+[CONTRIBUTING.md](CONTRIBUTING.md) for the house conventions (clippy is gated, formatting
+isn't, and format changes must update `docs/FORMAT.md`).
+
+Security policy and threat model: [SECURITY.md](SECURITY.md). Short version — the index
+contains the contents of your files, so treat `.ripindex/` as being as sensitive as the
+corpus it covers, and report vulnerabilities privately rather than in an issue.
 
 ## License
 

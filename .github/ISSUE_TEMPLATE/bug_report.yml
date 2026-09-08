@@ -1,0 +1,100 @@
+name: Bug report
+description: Something works differently than documented, or not at all
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for filing. Platform reports are especially welcome — ripindex was
+        developed on Windows, so Linux and macOS have had less real-world use.
+
+  - type: checkboxes
+    id: not-a-limitation
+    attributes:
+      label: Not already a known limitation
+      description: >
+        The README's [Limitations](../blob/main/README.md#limitations) section lists
+        behaviour that is deliberate. The most common surprise: ripindex matches whole
+        tokens and their camelCase/snake_case parts, **not substrings** — so `PyObject`
+        will not match `PyObject_HEAD` the way grep does, though `Object` matches both.
+      options:
+        - label: I read Limitations and this isn't one of them
+          required: true
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What you expected, and what you got instead.
+    validations:
+      required: true
+
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. ripindex index ~/some/repo
+        2. ripindex search --root ~/some/repo something
+        3. ...
+      description: >
+        If it depends on the corpus, say what's unusual about it (huge files, symlinks,
+        submodules, non-UTF-8 paths, a network mount, emoji in filenames).
+    validations:
+      required: true
+
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Platform
+      options:
+        - Linux x86_64
+        - Linux aarch64
+        - macOS (Apple Silicon)
+        - macOS (Intel)
+        - Windows x86_64
+        - Other / BSD
+    validations:
+      required: true
+
+  - type: dropdown
+    id: install-method
+    attributes:
+      label: How did you install it?
+      options:
+        - install.sh
+        - install.ps1
+        - Homebrew
+        - cargo install ripindex
+        - Built from source
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: Output of `ripindex --version`
+      placeholder: ripindex 0.1.0
+    validations:
+      required: true
+
+  - type: textarea
+    id: status
+    attributes:
+      label: Daemon status
+      description: >
+        Output of `ripindex status --json`. Skip it if the bug is that this command
+        itself fails — just say so.
+      render: json
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant daemon log
+      description: >
+        The tail of `$XDG_STATE_HOME/ripindex/daemon.log` (Linux/macOS) or
+        `%LOCALAPPDATA%\ripindex\daemon.log` (Windows). Re-running with
+        `RUST_LOG=debug` gives more. **The log can contain file paths from your
+        machine — redact anything you'd rather not publish.**
+      render: text

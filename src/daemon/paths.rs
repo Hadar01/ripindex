@@ -16,7 +16,7 @@
 //! set outside tests.
 
 use std::env;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 /// Directory for transient runtime state: the instance lock, and (on Unix)
 /// the socket file. Prefers `$XDG_RUNTIME_DIR/ripindex`, falling back to
@@ -92,6 +92,42 @@ pub fn state_dir() -> PathBuf {
     }
 }
 
+/// Canonicalize a root the way the daemon keys and reports it.
+///
+/// On Windows, `fs::canonicalize` returns a *verbatim* path (`\\?\C:\...`).
+/// That form is correct but unusable in practice for our purposes: it shows up
+/// in every search result and status line, it leaks as visual noise, and
+/// editors reject it - Vim and Neovim cannot open a `\\?\`-prefixed path, which
+/// would break the Telescope client outright. So the prefix is stripped, which
+/// also makes the daemon's paths match the ones the no-daemon code path
+/// already produces.
+///
+/// The trade-off is deliberate: `\\?\` exists to allow paths beyond `MAX_PATH`
+/// and to bypass path parsing. Stripping it means a root deeper than ~260
+/// characters may fail where it would otherwise have worked - a narrow case,
+/// versus unreadable output and broken editor integration for everyone.
+/// UNC paths keep their meaning: `\\?\UNC\server\share` becomes
+/// `\\server\share`.
+pub fn normalize_root(path: &str) -> PathBuf {
+    let canonical = std::fs::canonicalize(path).unwrap_or_else(|_| PathBuf::from(path));
+    strip_verbatim(&canonical)
+}
+
+/// Strip Windows' verbatim prefix; a no-op everywhere else.
+pub fn strip_verbatim(path: &Path) -> PathBuf {
+    if !cfg!(windows) {
+        return path.to_path_buf();
+    }
+    let text = path.to_string_lossy();
+    if let Some(rest) = text.strip_prefix(r"\\?\UNC\") {
+        return PathBuf::from(format!(r"\\{rest}"));
+    }
+    match text.strip_prefix(r"\\?\") {
+        Some(rest) => PathBuf::from(rest),
+        None => path.to_path_buf(),
+    }
+}
+
 /// The single global (not per-root) daemon-instance lock: whoever holds this
 /// is *the* daemon. Bound before the transport, so autostart races resolve
 /// here — the loser never gets far enough to bind. An advisory OS lock, so
@@ -149,6 +185,28 @@ mod tests {
         assert_eq!(lock_file().file_name().unwrap(), "daemon.lock");
         assert_eq!(log_file().file_name().unwrap(), "daemon.log");
         assert_eq!(config_file().file_name().unwrap(), "config.toml");
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn verbatim_prefix_is_stripped_for_display_and_clients() {
+        // The form `fs::canonicalize` hands back on Windows...
+        assert_eq!(strip_verbatim(Path::new(r"\\?\C:\code\proj")), PathBuf::from(r"C:\code\proj"));
+        // ...including the UNC spelling, which must stay a UNC path.
+        assert_eq!(strip_verbatim(Path::new(r"\\?\UNC\srv\share\x")), PathBuf::from(r"\\srv\share\x"));
+        // Anything already plain is untouched.
+        assert_eq!(strip_verbatim(Path::new(r"C:\code\proj")), PathBuf::from(r"C:\code\proj"));
+    }
+
+    #[test]
+    fn normalize_root_never_yields_a_verbatim_path() {
+        let dir = tempfile::tempdir().unwrap();
+        let normalized = normalize_root(&dir.path().display().to_string());
+        assert!(
+            !normalized.to_string_lossy().starts_with(r"\\?\"),
+            "normalize_root leaked a verbatim prefix: {}",
+            normalized.display()
+        );
     }
 
     #[cfg(windows)]

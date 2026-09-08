@@ -471,7 +471,7 @@ duration — only the second phase, milliseconds long, does.
 - `merge_index` remains as the synchronous convenience wrapper (plan, then
   prepare every group, then one `commit_merges` call) used by the plain CLI
   path (`ripindex merge`, and by extension `store::merge_index` when no
-  daemon owns the root); the daemon's per-root actor ([M4](#)) instead runs
+  daemon owns the root); the daemon's per-root actor (`src/daemon/actor.rs`) instead runs
   `prepare_merge` on a background task and folds `commit_merges` into its
   serialized mailbox loop, which is what actually keeps a merge from
   blocking reconciles for its full duration end to end.

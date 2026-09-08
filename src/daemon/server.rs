@@ -44,8 +44,9 @@ pub struct Registry {
 fn normalize(path: &str) -> PathBuf {
     // Best-effort canonicalisation; a root need not exist yet at `add_root`
     // time in the general case, but ours must (we build/open it immediately),
-    // so a failed canonicalize just falls back to the given path.
-    std::fs::canonicalize(path).unwrap_or_else(|_| PathBuf::from(path))
+    // so a failed canonicalize just falls back to the given path. See
+    // `paths::normalize_root` for why the Windows verbatim prefix is stripped.
+    crate::daemon::paths::normalize_root(path)
 }
 
 fn key_of(path: &Path) -> String {

@@ -33,7 +33,7 @@ use ripindex::{bench, snippet};
 const SNIPPET_WIDTH: usize = 160;
 
 #[derive(Parser)]
-#[command(name = "ripindex", version, about = "Persistent inverted index over a directory tree, with a daemon")]
+#[command(name = "ripindex", version, about = "Indexed code and text search with a crash-safe on-disk index and a background daemon")]
 struct Cli {
     #[command(subcommand)]
     cmd: Cmd,
@@ -41,13 +41,18 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Cmd {
-    /// Crawl PATH, build the index under PATH/.ripindex, print statistics.
-    /// Always direct — never involves the daemon.
+    /// Build PATH's index now and print statistics
+    ///
+    /// Crawls PATH, writes the index under PATH/.ripindex, and reports what it
+    /// indexed. Always direct — never involves the daemon.
     Index {
         path: PathBuf,
     },
-    /// Search a root. Prefers the daemon (autostarting one if none answers);
-    /// falls back to a direct, no-daemon build+search if that fails outright.
+    /// Search an indexed directory
+    ///
+    /// Prefers the daemon, autostarting one if none answers, and indexes on
+    /// first use. Falls back to a direct, no-daemon build and search if the
+    /// daemon cannot be reached at all.
     Search {
         /// Query: terms, AND / OR, "quoted phrase", -negated, ( grouping ).
         /// Starts with `-`? Put `--` before it so it isn't read as a flag.
@@ -66,12 +71,17 @@ enum Cmd {
         #[arg(long)]
         no_daemon: bool,
     },
-    /// Verify every checksum and structure of the index under PATH. Always direct.
+    /// Verify every checksum in PATH's index
+    ///
+    /// Reads and checks each file's CRC and structure. Always direct.
     Verify {
         #[arg(default_value = ".")]
         path: PathBuf,
     },
-    /// Build an index over PATH and report build, open and query measurements. Always direct.
+    /// Measure build, open, query and memory cost
+    ///
+    /// Builds an index over PATH and reports crawl/build time, cold and warm
+    /// open, per-query percentiles, and RSS. Always direct.
     Bench {
         path: PathBuf,
         /// Query to time (repeatable). Defaults to a built-in set.
@@ -81,22 +91,26 @@ enum Cmd {
         #[arg(long, default_value_t = 20)]
         iterations: u32,
     },
-    /// Reconcile PATH's index against the filesystem once. Routed through
-    /// the daemon if one is *already* running (no autostart — this
-    /// deliberately never spins up a persistent daemon on its own); direct
-    /// otherwise.
+    /// Reconcile PATH's index with the filesystem once
+    ///
+    /// Routed through the daemon if one is *already* running; direct
+    /// otherwise. Deliberately never autostarts a daemon — a one-shot update
+    /// should not leave a persistent process behind.
     Update {
         path: PathBuf,
     },
-    /// Merge small and heavily-deleted segments, in one manifest commit.
-    /// Same daemon-if-already-running, no-autostart rule as `update`.
+    /// Compact small and heavily-deleted segments
+    ///
+    /// Merges them in a single manifest commit. Same
+    /// daemon-if-already-running, no-autostart rule as `update`.
     Merge {
         path: PathBuf,
     },
-    /// Watch PATH and reconcile on change, standalone (no daemon involved) —
-    /// runs until interrupted (Ctrl+C). For always-on watching across
-    /// multiple roots in one process, run `ripindex daemon` instead and
-    /// `add_root` over the socket.
+    /// Watch PATH and reindex on change, without the daemon
+    ///
+    /// Runs in the foreground until interrupted (Ctrl+C). To watch several
+    /// roots from one process instead, run `ripindex daemon` and add roots
+    /// over its socket.
     Watch {
         path: PathBuf,
         #[arg(long, default_value_t = 500)]
@@ -104,14 +118,18 @@ enum Cmd {
         #[arg(long, default_value_t = 600)]
         periodic_reconcile_secs: u64,
     },
-    /// The daemon itself. Bare `ripindex daemon` runs in the foreground —
-    /// this is exactly what autostart execs, so it must take no required
-    /// subcommand.
+    /// Run or control the background daemon
+    ///
+    /// Bare `ripindex daemon` runs it in the foreground. That is exactly what
+    /// autostart execs, so it takes no required subcommand.
     Daemon {
         #[command(subcommand)]
         action: Option<DaemonAction>,
     },
-    /// Show what the daemon is doing (or that none is running).
+    /// Show what the daemon is doing
+    ///
+    /// Per-root document and segment counts, disk usage, last reconcile, and
+    /// whether a merge is running. Reports cleanly when no daemon is up.
     Status {
         #[arg(long)]
         json: bool,
@@ -372,7 +390,8 @@ async fn connect_if_running() -> Option<Client> {
 }
 
 fn cmd_update(path: &Path) -> anyhow::Result<()> {
-    let root_str = path.canonicalize().unwrap_or_else(|_| path.to_path_buf()).display().to_string();
+    // Same normalisation the daemon keys roots by, or the lookup misses.
+    let root_str = ripindex::daemon::paths::normalize_root(&path.display().to_string()).display().to_string();
     if let Some(mut client) = block_on(connect_if_running()) {
         match block_on(client.call(Method::AddRoot { path: root_str.clone() })) {
             Ok(Reply::Error(e)) => log::warn!("daemon add_root failed ({e}); reconciling directly instead"),
@@ -395,7 +414,8 @@ fn cmd_update(path: &Path) -> anyhow::Result<()> {
 }
 
 fn cmd_merge(path: &Path) -> anyhow::Result<()> {
-    let root_str = path.canonicalize().unwrap_or_else(|_| path.to_path_buf()).display().to_string();
+    // Same normalisation the daemon keys roots by, or the lookup misses.
+    let root_str = ripindex::daemon::paths::normalize_root(&path.display().to_string()).display().to_string();
     if let Some(mut client) = block_on(connect_if_running()) {
         if let Ok(Reply::Result(_)) = block_on(client.call(Method::AddRoot { path: root_str.clone() })) {
             match block_on(client.call(Method::Merge { root: Some(root_str) })) {

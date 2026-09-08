@@ -45,7 +45,7 @@ First public release.
 
 ### Testing
 
-257 tests, including 4,600+ kill-9 crash-recovery iterations, per-syscall fault injection
+259 tests, including 4,600+ kill-9 crash-recovery iterations, per-syscall fault injection
 asserting all-or-nothing commits, `proptest` round-trips for every encoder, and
 socket-level daemon stress tests (concurrent queries during live merges, a 20-way autostart
 race, and SIGKILL-then-query-immediately recovery).

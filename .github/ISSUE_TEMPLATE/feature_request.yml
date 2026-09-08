@@ -1,0 +1,33 @@
+name: Feature request
+description: Suggest something ripindex should do
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Some things are deliberately out of scope — see
+        [Limitations](../blob/main/README.md#limitations). Fuzzy matching and regex are
+        the two most likely to be declined; extractors (PDF, docx) are the most likely
+        to be accepted.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What are you trying to do?
+      description: >
+        The underlying task, not just the proposed feature. It often turns out there's
+        already a way, or a better feature to build.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What should it do?
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: What are you doing instead today?
