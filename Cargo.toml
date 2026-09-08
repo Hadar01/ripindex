@@ -1,0 +1,66 @@
+[package]
+name = "ripindex"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.89"
+description = "Indexed code and text search with a crash-safe on-disk index and a background daemon"
+authors = ["The ripindex Authors"]
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/hadar01/ripindex"
+homepage = "https://github.com/hadar01/ripindex"
+documentation = "https://docs.rs/ripindex"
+readme = "README.md"
+keywords = ["search", "index", "grep", "cli", "fulltext"]
+categories = ["command-line-utilities", "text-processing", "filesystem"]
+exclude = [
+    "/.github",
+    "/demo",
+    "/scripts",
+    "/contrib",
+    "/packaging",
+    "/docs/img",
+]
+
+[lib]
+name = "ripindex"
+path = "src/lib.rs"
+
+[[bin]]
+name = "ripindex"
+path = "src/main.rs"
+
+[[bin]]
+name = "crash-harness"
+path = "src/bin/crash_harness.rs"
+
+[dependencies]
+anyhow = "1"
+clap = { version = "4", features = ["derive", "env"] }
+crc32fast = "1"
+notify = "6"
+xxhash-rust = { version = "0.8", features = ["xxh3"] }
+env_logger = "0.11"
+ignore = "0.4"
+log = "0.4"
+memmap2 = "0.9"
+memory-stats = "1"
+rayon = "1"
+thiserror = "2"
+unicode-segmentation = "1"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tokio = { version = "1", features = ["rt-multi-thread", "net", "io-util", "macros", "time", "sync", "process", "signal"] }
+toml = "0.8"
+
+[target.'cfg(windows)'.dependencies]
+windows-sys = { version = "0.59", features = ["Win32_Foundation", "Win32_Storage_FileSystem", "Win32_Security", "Win32_Security_Authorization", "Win32_System_Threading", "Win32_System_Console", "Win32_System_Power", "Win32_System_SystemInformation"] }
+
+[target.'cfg(unix)'.dependencies]
+libc = "0.2"
+
+[dev-dependencies]
+proptest = "1"
+tempfile = "3"
+
+[profile.release]
+debug = 1

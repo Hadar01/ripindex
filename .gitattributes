@@ -1,0 +1,31 @@
+# Normalize every text file to LF *in the repository*, regardless of the
+# platform it was committed from.
+* text=auto eol=lf
+
+# Shell scripts must stay LF even in a Windows working copy. A CRLF shebang
+# line fails on Linux and macOS with "bad interpreter" - and install.sh is
+# served straight from a GitHub release to `curl | sh`, so a CRLF copy would
+# break installation for every non-Windows user.
+*.sh        text eol=lf
+demo/*.tape text eol=lf
+
+# PowerShell: CRLF is the native convention on Windows, and install.ps1 only
+# ever runs there.
+*.ps1 text eol=crlf
+
+# Everything else, explicitly.
+*.rs   text eol=lf
+*.toml text eol=lf
+*.lock text eol=lf
+*.md   text eol=lf
+*.yml  text eol=lf
+*.lua  text eol=lf
+*.rb   text eol=lf
+*.proptest-regressions text eol=lf
+
+# Generated demo asset - never diff it, never normalize it.
+*.gif binary
+
+# Keep the format spec and licenses out of language statistics / diff noise.
+docs/FORMAT.md linguist-documentation
+LICENSE-*      linguist-vendored

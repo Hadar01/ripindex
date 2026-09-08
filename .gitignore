@@ -1,0 +1,5 @@
+/target
+# index directories, wherever a test or demo left one
+.ripindex/
+# generated demo assets
+/demo/*.gif

@@ -1,0 +1,65 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+
+jobs:
+  test:
+    name: test (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo build --all-targets --locked
+      - run: cargo test --locked
+      # The daemon suite is the part most likely to break on a platform the
+      # author doesn't develop on: it binds a real socket/named pipe and
+      # spawns real subprocesses. Run it again alone so a failure here is
+      # unambiguous rather than buried in the full run.
+      - name: daemon suite (socket, autostart race, kill recovery)
+        run: cargo test --locked --test daemon -- --test-threads=4
+
+  msrv:
+    name: msrv (1.89)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # 1.89 is where `File::try_lock` stabilised. The writer mutex is a real
+      # OS advisory lock, so this is a hard floor, not a preference.
+      - uses: dtolnay/rust-toolchain@1.89
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo check --all-targets --locked
+
+  clippy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo clippy --all-targets --locked -- -D warnings
+
+  crash-harness:
+    name: crash harness (kill-9 recovery loop)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      # A short loop, not the full soak: enough that a commit which breaks
+      # crash recovery fails CI rather than being found by a user.
+      # Args are: iterations, seed, delay_us (the script builds the harness).
+      - run: ./scripts/crash_loop.sh 150 1 400
