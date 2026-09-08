@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 # Drives the README demo at a watchable pace so the GIF can be captured in one
+# take. On Windows/PowerShell use scripts/record-demo.ps1 instead - it needs no
+# bash, and Start-Sleep being a cmdlet makes its pacing smoother.
 # take with any screen recorder (ScreenToGif, N-Studio, LICEcap, peek...),
 # without typing on camera or fumbling a command.
 #

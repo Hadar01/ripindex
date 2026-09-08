@@ -11,12 +11,22 @@ scripts/demo-corpus.sh cpython
 
 Then either route:
 
-**Screen recorder** (ScreenToGif, N-Studio, LICEcap, peek) — works everywhere, including
-Windows. `scripts/record-demo.sh` types and runs the whole demo for you at a watchable
-pace, so you only have to start and stop the recorder:
+**Screen recorder** (ScreenToGif, N-Studio, LICEcap, peek) — works everywhere. The
+`record-demo` scripts type and run the whole demo for you at a watchable pace, so you only
+start and stop the recorder. Roughly a 20-second recording.
+
+PowerShell:
+
+```powershell
+scriptsecord-demo.ps1                      # -Speed 1.4 for slower pacing
+scriptsecord-demo.ps1 -Corpus C:\codeepo
+```
+
+Bash (Git Bash, Linux, macOS) — note this is a *bash* invocation; `CORPUS=x cmd` is not
+valid PowerShell syntax:
 
 ```sh
-CORPUS=~/cpython scripts/record-demo.sh     # ~25s; SPEED=1.0 for slower pacing
+CORPUS=~/cpython scripts/record-demo.sh      # SPEED=1.0 for slower pacing
 ```
 
 **VHS** (headless, reproducible, needs ttyd + ffmpeg — easiest on Linux/macOS):
