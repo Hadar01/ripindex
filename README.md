@@ -111,12 +111,6 @@ curl -LsSf https://github.com/hadar01/ripindex/releases/latest/download/ripindex
 irm https://github.com/hadar01/ripindex/releases/latest/download/ripindex-installer.ps1 | iex
 ```
 
-**Homebrew**
-
-```sh
-brew install hadar01/tap/ripindex
-```
-
 **Cargo** (needs Rust 1.89+)
 
 ```sh
@@ -168,12 +162,9 @@ integrations get something they can open.
 (`%LOCALAPPDATA%\ripindex\config.toml` on Windows) and is optional — every setting has a
 working default.
 
-### Editor integration
-
-A Neovim [Telescope](https://github.com/nvim-telescope/telescope.nvim) extension talks to
-the daemon socket directly: [`contrib/nvim`](contrib/nvim). It's small on purpose — the
-daemon protocol is newline-delimited JSON over a Unix socket or named pipe, so a client
-doesn't need much code.
+The daemon speaks newline-delimited JSON over a Unix socket (or a Windows named
+pipe), so an editor or tool integration is a small client rather than a
+subprocess-and-parse job. The protocol is defined in `src/daemon/protocol.rs`.
 
 ## How it works
 

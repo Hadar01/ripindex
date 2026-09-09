@@ -14,11 +14,8 @@ keywords = ["search", "index", "grep", "cli", "fulltext"]
 categories = ["command-line-utilities", "text-processing", "filesystem"]
 exclude = [
     "/.github",
-    "/demo",
     "/scripts",
-    "/contrib",
     "/packaging",
-    "/docs/img",
 ]
 
 [lib]

@@ -146,11 +146,6 @@ jobs:
             irm https://github.com/hadar01/ripindex/releases/latest/download/ripindex-installer.ps1 | iex
             ```
 
-            **Homebrew**
-            ```sh
-            brew install hadar01/tap/ripindex
-            ```
-
             **Cargo**
             ```sh
             cargo install ripindex

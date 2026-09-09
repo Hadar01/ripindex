@@ -98,9 +98,9 @@ pub fn state_dir() -> PathBuf {
 /// That form is correct but unusable in practice for our purposes: it shows up
 /// in every search result and status line, it leaks as visual noise, and
 /// editors reject it - Vim and Neovim cannot open a `\\?\`-prefixed path, which
-/// would break the Telescope client outright. So the prefix is stripped, which
-/// also makes the daemon's paths match the ones the no-daemon code path
-/// already produces.
+/// would break any editor integration built on the daemon protocol. So the
+/// prefix is stripped, which also makes the daemon's paths match the ones
+/// the no-daemon code path already produces.
 ///
 /// The trade-off is deliberate: `\\?\` exists to allow paths beyond `MAX_PATH`
 /// and to bypass path parsing. Stripping it means a root deeper than ~260

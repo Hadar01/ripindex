@@ -39,7 +39,6 @@ First public release.
 - **Resource governor.** Token-bucket IO cap plus a CPU duty cycle, with real
   battery and memory-pressure detection (`GetSystemPowerStatus` / `GlobalMemoryStatusEx`
   on Windows; sysfs and `/proc/meminfo` on Linux).
-- **Neovim Telescope extension** in `contrib/nvim`, talking to the daemon socket directly.
 - Prebuilt binaries for Linux x86_64/aarch64, macOS x86_64/aarch64, and Windows x86_64,
   with `SHA256SUMS` and checksum-verifying shell and PowerShell installers.
 

@@ -6,9 +6,8 @@
 
 # Screen-recorder intermediates. The GIF itself is committed; the multi-megabyte
 # project archives and frame dumps that produce it are not.
-docs/img/*.zip
-docs/img/frames/
-docs/img/*.mp4
-docs/img/*.mkv
-docs/img/*.webm
-Project.zip
+*.zip
+frames/
+*.mp4
+*.mkv
+*.webm
