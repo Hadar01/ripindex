@@ -81,20 +81,24 @@ printf 'preparing (indexing off-camera, a few seconds)...\r'
 ripindex index "$CORPUS" >/dev/null 2>&1 || true
 printf '%*s\r' 60 ''
 
+# Run from inside the corpus so the typed commands read `--root .` rather
+# than carrying an absolute path across the frame.
+cd "$CORPUS"
+
 clear
 files=$(find "$CORPUS" -type f -not -path '*/.git/*' 2>/dev/null | wc -l | tr -d ' ')
 say "# CPython source: ${files} files, ~90 MiB. Indexed once, now warm."
 sleep "$(scaled 1.1)"
 
-run "ripindex search --root $CORPUS PyUnicode_FromString -n 3" 1.8
+run "ripindex search --root . PyUnicode_FromString -n 3" 1.8
 
 clear
 say "# Boolean queries, phrases and negation - not just literals:"
 sleep "$(scaled 0.7)"
-run "ripindex search --root $CORPUS 'asyncio AND subprocess' -n 3" 1.8
+run "ripindex search --root . 'asyncio AND subprocess' -n 3" 1.8
 
 clear
-run "ripindex search --root $CORPUS '\"reference count\"' -n 3" 1.8
+run "ripindex search --root . '\"reference count\"' -n 3" 1.8
 
 clear
 say "# A daemon keeps it current and answers every query:"

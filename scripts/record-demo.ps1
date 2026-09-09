@@ -103,6 +103,11 @@ Write-Host 'preparing (indexing off-camera, a few seconds)...' -NoNewline
 & $bin index $Corpus 2>&1 | Out-Null
 Write-Host "`r$(' ' * 55)`r" -NoNewline
 
+# Run from inside the corpus so the typed commands read `--root .` rather
+# than carrying an absolute path across the frame. Output is unchanged:
+# result paths print relative to the root either way.
+Set-Location $Corpus
+
 Clear-Host
 
 # Count via git when the corpus is a repo: instant, and it excludes .git for
@@ -127,15 +132,15 @@ if ($null -eq $fileCount) {
 Say "# CPython source: $fileCount files, ~90 MiB. Indexed once, now warm."
 Nap 1.1
 
-Run "ripindex search --root $Corpus PyUnicode_FromString -n 3"
+Run "ripindex search --root . PyUnicode_FromString -n 3"
 
 Clear-Host
 Say '# Boolean queries, phrases and negation - not just literals:'
 Nap 0.7
-Run "ripindex search --root $Corpus 'asyncio AND subprocess' -n 3"
+Run "ripindex search --root . 'asyncio AND subprocess' -n 3"
 
 Clear-Host
-Run "ripindex search --root $Corpus '`"reference count`"' -n 3"
+Run "ripindex search --root . '`"reference count`"' -n 3"
 
 Clear-Host
 Say '# A daemon keeps it current and answers every query:'
