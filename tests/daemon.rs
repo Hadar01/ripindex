@@ -353,6 +353,10 @@ impl EnvOverride {
         // lingering daemon from one test answer (and then, mid-shutdown,
         // drop) a connection meant for the other's freshly-spawned daemon.
         static COUNTER: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+        // Only the Windows pipe name needs this: it lives in a global kernel
+        // namespace, so two tests in one binary would otherwise collide. The Unix
+        // socket path is already unique because it sits inside `dir`.
+        #[cfg_attr(unix, allow(unused_variables))]
         let n = COUNTER.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
         let dir = tempfile::tempdir().unwrap();
         unsafe {

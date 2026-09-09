@@ -618,12 +618,29 @@ mod tests {
         assert_eq!(display_path("C:/code/proj/src/main.rs", root, false), "src/main.rs");
     }
 
+    /// A deliberate platform asymmetry, asserted on both sides rather than
+    /// papered over. `display_path` trims with `std::path::is_separator`, which
+    /// accepts a backslash on Windows and not on Unix - and that is correct in
+    /// both cases: on Windows the root comes from canonicalisation and the doc
+    /// paths from the crawler, which don't always agree on the separator, while
+    /// on Unix a backslash is a perfectly legal character *in a filename*, so
+    /// treating it as a separator would mangle a file genuinely called
+    /// `src\main.rs`.
+    #[cfg(windows)]
     #[test]
-    fn display_path_handles_either_separator_after_the_root() {
-        // The root comes from canonicalisation and the doc paths from the
-        // crawler, and on Windows those don't always agree on the separator.
+    fn display_path_accepts_a_backslash_separator_on_windows() {
         let back = String::from("C:/code/proj") + &String::from(char::from(92)) + "src" + &String::from(char::from(92)) + "main.rs";
         assert_eq!(display_path(&back, "C:/code/proj", false), format!("src{}main.rs", char::from(92)));
+    }
+
+    /// The other half of the asymmetry above.
+    #[cfg(unix)]
+    #[test]
+    fn display_path_treats_a_backslash_as_a_filename_char_on_unix() {
+        let bs = String::from(char::from(92));
+        let path = String::from("/code/proj/") + &bs + "odd" + &bs + "name.rs";
+        // The leading "/" is stripped; the backslashes are part of the name.
+        assert_eq!(display_path(&path, "/code/proj", false), format!("{bs}odd{bs}name.rs"));
     }
 
     #[test]

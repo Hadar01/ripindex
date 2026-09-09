@@ -166,7 +166,7 @@ impl PowerSource for RealPowerSource {
         let mut total_kb: Option<u64> = None;
         let mut available_kb: Option<u64> = None;
         for line in meminfo.lines() {
-            let mut parse = |prefix: &str| -> Option<u64> { line.strip_prefix(prefix)?.trim().split_whitespace().next()?.parse().ok() };
+            let parse = |prefix: &str| -> Option<u64> { line.strip_prefix(prefix)?.split_whitespace().next()?.parse().ok() };
             if let Some(v) = parse("MemTotal:") {
                 total_kb = Some(v);
             } else if let Some(v) = parse("MemAvailable:") {
