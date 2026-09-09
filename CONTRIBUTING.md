@@ -6,7 +6,7 @@ developed on Windows; Linux and macOS are covered by CI but have had little real
 ## Getting started
 
 ```sh
-cargo test                              # 259 tests, ~20s
+cargo test                              # 265 tests, ~20s
 cargo clippy --all-targets -- -D warnings
 cargo run --release -- bench <dir>      # build/open/query/memory report
 ```

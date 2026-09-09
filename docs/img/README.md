@@ -18,8 +18,11 @@ start and stop the recorder. Roughly a 20-second recording.
 PowerShell:
 
 ```powershell
-scriptsecord-demo.ps1                      # -Speed 1.4 for slower pacing
-scriptsecord-demo.ps1 -Corpus C:\codeepo
+scripts
+ecord-demo.ps1                      # -Speed 1.4 for slower pacing
+scripts
+ecord-demo.ps1 -Corpus C:\code
+epo
 ```
 
 Bash (Git Bash, Linux, macOS) — note this is a *bash* invocation; `CORPUS=x cmd` is not
@@ -34,6 +37,22 @@ CORPUS=~/cpython scripts/record-demo.sh      # SPEED=1.0 for slower pacing
 ```sh
 CORPUS=~/cpython vhs demo/demo.tape        # writes docs/img/demo.gif directly
 ```
+
+### If your recorder gives you frames or a video instead of a GIF
+
+Common: N-Studio and ScreenToGif save a *project* (a zip of PNG frames plus a
+delay JSON) and put GIF export behind a paid editor; OBS gives you an mp4.
+`scripts/make-gif.ps1` turns any of those into an optimised GIF with ffmpeg
+(`winget install Gyan.FFmpeg`), preserving the recorder's own per-frame timing:
+
+```powershell
+scripts\make-gif.ps1 -InputPath docs\img\Project.zip
+scripts\make-gif.ps1 -InputPath recording.mp4 -Fps 12 -MaxWidth 1000
+```
+
+It accepts a project `.zip`, a folder of PNG frames, or a video, and writes
+`docs/img/demo.gif` by default. If the result is over 2 MB it tells you which
+knobs to turn (`-Fps`, `-MaxWidth`, `-Colors`).
 
 Notes:
 

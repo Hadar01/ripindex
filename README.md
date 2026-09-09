@@ -130,7 +130,15 @@ ripindex daemon install-hint    # prints a systemd unit / launchd plist; install
 
 # Skip the daemon entirely
 ripindex search --no-daemon --root . needle
+
+# Paths print relative to the searched root, like ripgrep. Full paths:
+ripindex search --root ~/code/myproject --absolute parse_config
 ```
+
+Result paths are shown relative to the root you searched, and snippets are
+sized to your terminal so a result stays one line per file. `--absolute` prints
+full paths; the daemon protocol always carries the full path, so editor
+integrations get something they can open.
 
 `$RIPINDEX_ROOT` sets the default root. Config lives at `$XDG_STATE_HOME/ripindex/config.toml`
 (`%LOCALAPPDATA%\ripindex\config.toml` on Windows) and is optional — every setting has a
@@ -170,7 +178,7 @@ How it's tested:
   merge and reconciles run; a 20-way autostart race asserting exactly one daemon wins;
   SIGKILL-the-daemon-and-query-immediately recovery.
 
-259 tests, and `cargo test` runs all of them in about 20 seconds.
+265 tests, and `cargo test` runs all of them in about 20 seconds.
 
 ## Limitations
 
@@ -208,7 +216,7 @@ but have had less real-world use. Platform bug reports are especially welcome.
 ## Development
 
 ```sh
-cargo test                              # 259 tests, ~20s
+cargo test                              # 265 tests, ~20s
 cargo test --test daemon                # socket, autostart race, kill recovery
 ./scripts/crash_loop.sh 2000            # kill-9 soak
 cargo run --release -- bench <dir>      # build/open/query/memory report

@@ -127,15 +127,15 @@ if ($null -eq $fileCount) {
 Say "# CPython source: $fileCount files, ~90 MiB. Indexed once, now warm."
 Nap 1.1
 
-Run "ripindex search --root $Corpus PyUnicode_FromString -n 4"
+Run "ripindex search --root $Corpus PyUnicode_FromString -n 3"
 
 Clear-Host
 Say '# Boolean queries, phrases and negation - not just literals:'
 Nap 0.7
-Run "ripindex search --root $Corpus 'asyncio AND subprocess' -n 4"
+Run "ripindex search --root $Corpus 'asyncio AND subprocess' -n 3"
 
 Clear-Host
-Run "ripindex search --root $Corpus '`"reference count`"' -n 4"
+Run "ripindex search --root $Corpus '`"reference count`"' -n 3"
 
 Clear-Host
 Say '# A daemon keeps it current and answers every query:'

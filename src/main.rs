@@ -29,8 +29,82 @@ use ripindex::report::{commas, human_bytes, human_duration};
 use ripindex::store::{self, BuildProgress, OpenOptions};
 use ripindex::{bench, snippet};
 
-/// Snippet width in characters.
-const SNIPPET_WIDTH: usize = 160;
+/// Snippet width when the terminal's width can't be determined (a pipe, a
+/// file, a CI log). Generous on purpose: wrapping is only a problem on a
+/// terminal, and truncating piped output would lose information.
+const SNIPPET_WIDTH_FALLBACK: usize = 160;
+
+/// Columns the result lines spend on the score and indent before the snippet.
+const GUTTER: usize = 12;
+
+/// Terminal width in columns, when stdout is one.
+///
+/// A fixed 160-column snippet wraps on essentially every real terminal, and a
+/// wrapped result is two lines instead of one - which is what made search
+/// output twice as tall as it needed to be.
+fn terminal_width() -> Option<usize> {
+    if !std::io::stdout().is_terminal() {
+        return None;
+    }
+    #[cfg(windows)]
+    {
+        use windows_sys::Win32::System::Console::{GetConsoleScreenBufferInfo, GetStdHandle, CONSOLE_SCREEN_BUFFER_INFO, STD_OUTPUT_HANDLE};
+        // SAFETY: `info` is a valid out-pointer, zeroed to a defined state
+        // before the call; a failed call leaves it zeroed and we return None.
+        unsafe {
+            let handle = GetStdHandle(STD_OUTPUT_HANDLE);
+            let mut info: CONSOLE_SCREEN_BUFFER_INFO = std::mem::zeroed();
+            if GetConsoleScreenBufferInfo(handle, &mut info) == 0 {
+                return None;
+            }
+            let cols = i32::from(info.srWindow.Right) - i32::from(info.srWindow.Left) + 1;
+            usize::try_from(cols).ok().filter(|c| *c > 0)
+        }
+    }
+    #[cfg(unix)]
+    {
+        // SAFETY: `ws` is a valid out-pointer for TIOCGWINSZ on fd 1.
+        unsafe {
+            let mut ws: libc::winsize = std::mem::zeroed();
+            if libc::ioctl(libc::STDOUT_FILENO, libc::TIOCGWINSZ, &mut ws) != 0 {
+                return None;
+            }
+            Some(usize::from(ws.ws_col)).filter(|c| *c > 0)
+        }
+    }
+    #[cfg(not(any(windows, unix)))]
+    {
+        None
+    }
+}
+
+/// How wide a snippet may be, so a result stays one line per file.
+fn snippet_width() -> usize {
+    match terminal_width() {
+        Some(cols) => cols.saturating_sub(GUTTER).clamp(40, 400),
+        None => SNIPPET_WIDTH_FALLBACK,
+    }
+}
+
+/// Render a hit's path the way `ripgrep` does: relative to the tree that was
+/// searched. The absolute path is correct but mostly noise - when you asked
+/// about a root, `Objects/weakrefobject.c` is the part you're reading, and it
+/// keeps a result on one line. `--absolute` opts out, and the daemon protocol
+/// always carries the full path so editors and plugins can open it.
+fn display_path(path: &str, root: &str, absolute: bool) -> String {
+    if absolute || root.is_empty() {
+        return path.to_string();
+    }
+    match path.strip_prefix(root) {
+        Some(rest) => {
+            // `is_separator` handles both / and the platform separator, and
+            // needs no backslash literal to get wrong.
+            let trimmed = rest.trim_start_matches(std::path::is_separator);
+            if trimmed.is_empty() { path.to_string() } else { trimmed.to_string() }
+        }
+        None => path.to_string(),
+    }
+}
 
 #[derive(Parser)]
 #[command(name = "ripindex", version, about = "Indexed code and text search with a crash-safe on-disk index and a background daemon")]
@@ -70,6 +144,9 @@ enum Cmd {
         /// Skip the daemon entirely, even if one is running.
         #[arg(long)]
         no_daemon: bool,
+        /// Print full paths instead of paths relative to the searched root.
+        #[arg(long)]
+        absolute: bool,
     },
     /// Verify every checksum in PATH's index
     ///
@@ -151,7 +228,7 @@ fn main() -> anyhow::Result<()> {
     let cli = Cli::parse();
     match cli.cmd {
         Cmd::Index { path } => cmd_index(&path),
-        Cmd::Search { query, root, limit, no_color, no_daemon } => cmd_search(&root, &query, limit, !no_color, no_daemon),
+        Cmd::Search { query, root, limit, no_color, no_daemon, absolute } => cmd_search(&root, &query, limit, !no_color, no_daemon, absolute),
         Cmd::Verify { path } => cmd_verify(&path),
         Cmd::Bench { path, queries, iterations } => cmd_bench(&path, &queries, iterations),
         Cmd::Update { path } => cmd_update(&path),
@@ -254,7 +331,7 @@ async fn daemon_query(root: &Path, query_str: &str, limit: usize) -> anyhow::Res
     Ok(reply)
 }
 
-fn cmd_search(root: &Path, query_str: &str, limit: usize, color: bool, no_daemon: bool) -> anyhow::Result<()> {
+fn cmd_search(root: &Path, query_str: &str, limit: usize, color: bool, no_daemon: bool, absolute: bool) -> anyhow::Result<()> {
     // Parse first, always, so a bad query fails fast whichever path we take.
     let query = Query::parse(query_str).with_context(|| format!("invalid query {query_str:?}"))?;
 
@@ -269,7 +346,7 @@ fn cmd_search(root: &Path, query_str: &str, limit: usize, color: bool, no_daemon
         // first build, while still eventually recovering from a stuck one.
         match block_on(async { tokio::time::timeout(Duration::from_secs(30), daemon_query(root, query_str, limit)).await }) {
             Ok(Ok(Reply::Query { hits, total, elapsed_us })) => {
-                print_daemon_hits(&hits, color)?;
+                print_daemon_hits(&hits, color, absolute)?;
                 eprintln!(
                     "{} of {total} matching files shown (via daemon); query took {}",
                     hits.len(),
@@ -285,19 +362,23 @@ fn cmd_search(root: &Path, query_str: &str, limit: usize, color: bool, no_daemon
             Err(_elapsed) => log::warn!("daemon did not respond within 30s; falling back to a direct search"),
         }
     }
-    cmd_search_direct(root, &query, limit, color)
+    cmd_search_direct(root, &query, limit, color, absolute)
 }
 
-fn print_daemon_hits(hits: &[ripindex::daemon::client::QueryHit], color: bool) -> anyhow::Result<()> {
+fn print_daemon_hits(hits: &[ripindex::daemon::client::QueryHit], color: bool, absolute: bool) -> anyhow::Result<()> {
     let stdout = std::io::stdout();
     let mut out = stdout.lock();
     for hit in hits {
         match (&hit.snippet, hit.line_no) {
             (Some(s), Some(line)) => {
                 let rendered = if color { s.clone() } else { strip_ansi(s) };
-                writeln!(out, "{:>8.3}  {}:{line}\n          {rendered}", hit.score, hit.path)?;
+                let shown = display_path(&hit.path, &hit.root, absolute);
+                writeln!(out, "{:>8.3}  {shown}:{line}\n          {rendered}", hit.score)?;
             }
-            _ => writeln!(out, "{:>8.3}  {}\n          (no snippet: file changed or unreadable since indexing)", hit.score, hit.path)?,
+            _ => {
+                let shown = display_path(&hit.path, &hit.root, absolute);
+                writeln!(out, "{:>8.3}  {shown}\n          (no snippet: file changed or unreadable since indexing)", hit.score)?
+            }
         }
     }
     out.flush()?;
@@ -315,7 +396,7 @@ fn strip_ansi(s: &str) -> String {
 
 /// The original, no-daemon path: build (if needed) and search in this
 /// process. What every `search` used before M4, and the fallback M4 keeps.
-fn cmd_search_direct(root: &Path, query: &Query, limit: usize, color: bool) -> anyhow::Result<()> {
+fn cmd_search_direct(root: &Path, query: &Query, limit: usize, color: bool, absolute: bool) -> anyhow::Result<()> {
     let index = open_or_build(root)?;
 
     let t = Instant::now();
@@ -324,25 +405,17 @@ fn cmd_search_direct(root: &Path, query: &Query, limit: usize, color: bool) -> a
 
     let color = color && std::io::stdout().is_terminal();
     let terms = query.highlight_terms();
+    let width = snippet_width();
+    // Stored paths are absolute and rooted here, so this is the prefix they share.
+    let root_str = ripindex::daemon::paths::normalize_root(&root.display().to_string()).display().to_string();
     let stdout = std::io::stdout();
     let mut out = stdout.lock();
     for hit in &result.hits {
         let Some(meta) = index.doc(hit.doc) else { continue };
-        match snippet::snippet_for(&meta.path, &terms, SNIPPET_WIDTH) {
-            Some(s) => writeln!(
-                out,
-                "{:>8.3}  {}:{}\n          {}",
-                hit.score,
-                meta.path.display(),
-                s.line_no,
-                snippet::render(&s, color)
-            )?,
-            None => writeln!(
-                out,
-                "{:>8.3}  {}\n          (no snippet: file changed or unreadable since indexing)",
-                hit.score,
-                meta.path.display()
-            )?,
+        let shown = display_path(&meta.path.display().to_string(), &root_str, absolute);
+        match snippet::snippet_for(&meta.path, &terms, width) {
+            Some(s) => writeln!(out, "{:>8.3}  {shown}:{}\n          {}", hit.score, s.line_no, snippet::render(&s, color))?,
+            None => writeln!(out, "{:>8.3}  {shown}\n          (no snippet: file changed or unreadable since indexing)", hit.score)?,
         }
     }
     out.flush()?;
@@ -532,5 +605,50 @@ fn cmd_status(json: bool) -> anyhow::Result<()> {
             }
             Ok(())
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn display_path_strips_the_searched_root() {
+        let root = "C:/code/proj";
+        assert_eq!(display_path("C:/code/proj/src/main.rs", root, false), "src/main.rs");
+    }
+
+    #[test]
+    fn display_path_handles_either_separator_after_the_root() {
+        // The root comes from canonicalisation and the doc paths from the
+        // crawler, and on Windows those don't always agree on the separator.
+        let back = String::from("C:/code/proj") + &String::from(char::from(92)) + "src" + &String::from(char::from(92)) + "main.rs";
+        assert_eq!(display_path(&back, "C:/code/proj", false), format!("src{}main.rs", char::from(92)));
+    }
+
+    #[test]
+    fn display_path_leaves_a_path_outside_the_root_alone() {
+        // Better a long absolute path than a silently mangled one.
+        assert_eq!(display_path("D:/elsewhere/x.rs", "C:/code/proj", false), "D:/elsewhere/x.rs");
+    }
+
+    #[test]
+    fn display_path_falls_back_when_the_path_is_the_root() {
+        // Stripping would leave nothing to print, so print the whole thing.
+        assert_eq!(display_path("C:/code/proj", "C:/code/proj", false), "C:/code/proj");
+    }
+
+    #[test]
+    fn display_path_absolute_flag_and_empty_root_are_pass_through() {
+        assert_eq!(display_path("C:/code/proj/src/main.rs", "C:/code/proj", true), "C:/code/proj/src/main.rs");
+        assert_eq!(display_path("C:/code/proj/src/main.rs", "", false), "C:/code/proj/src/main.rs");
+    }
+
+    #[test]
+    fn snippet_width_is_always_usable() {
+        // Whatever the terminal reports (or doesn't), the width must stay in a
+        // range that can actually hold a snippet.
+        let w = snippet_width();
+        assert!((40..=400).contains(&w), "unusable snippet width: {w}");
     }
 }

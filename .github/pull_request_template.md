@@ -4,7 +4,7 @@
 
 ## Checks
 
-- [ ] `cargo test` passes (259 tests at time of writing)
+- [ ] `cargo test` passes (265 tests at time of writing)
 - [ ] `cargo clippy --all-targets -- -D warnings` is clean — CI gates on this
 - [ ] Touched the on-disk format? `docs/FORMAT.md` updated to match, field by field
 - [ ] Touched the commit or recovery path? `./scripts/crash_loop.sh 500` still passes
