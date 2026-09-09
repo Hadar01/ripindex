@@ -15,3 +15,11 @@ updates:
     directory: "/"
     schedule:
       interval: monthly
+    ignore:
+      # dtolnay/rust-toolchain's tags are *toolchain selectors*, not action
+      # versions: `@stable` and `@1.89` choose which Rust to install. Dependabot
+      # reads the `@1.89` in the msrv job as a version to bump and proposed
+      # 1.120. Merging that would make the msrv job install the newest Rust and
+      # silently stop enforcing the 1.89 floor it exists to check - the job would
+      # still pass, while testing nothing. Not a version to track.
+      - dependency-name: "dtolnay/rust-toolchain"
