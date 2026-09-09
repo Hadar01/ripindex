@@ -49,5 +49,5 @@ asserting all-or-nothing commits, `proptest` round-trips for every encoder, and
 socket-level daemon stress tests (concurrent queries during live merges, a 20-way autostart
 race, and SIGKILL-then-query-immediately recovery).
 
-[Unreleased]: https://github.com/hadar01/ripindex/compare/v0.1.0...HEAD
-[0.1.0]: https://github.com/hadar01/ripindex/releases/tag/v0.1.0
+[Unreleased]: https://github.com/Hadar01/ripindex/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/Hadar01/ripindex/releases/tag/v0.1.0

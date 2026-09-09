@@ -3,7 +3,7 @@
 .SYNOPSIS
     ripindex installer for Windows.
 .DESCRIPTION
-    irm https://github.com/hadar01/ripindex/releases/latest/download/ripindex-installer.ps1 | iex
+    irm https://github.com/Hadar01/ripindex/releases/latest/download/ripindex-installer.ps1 | iex
 
     Downloads the release archive for this machine, verifies it against the
     published SHA-256, and installs into %LOCALAPPDATA%\ripindex\bin (added to
@@ -25,7 +25,7 @@ param(
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 
-$Repo = 'hadar01/ripindex'
+$Repo = 'Hadar01/ripindex'
 $Bin  = 'ripindex'
 
 function Fail([string] $Message) { Write-Error $Message; exit 1 }

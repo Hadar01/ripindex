@@ -138,12 +138,12 @@ jobs:
 
             **macOS / Linux**
             ```sh
-            curl -LsSf https://github.com/hadar01/ripindex/releases/latest/download/ripindex-installer.sh | sh
+            curl -LsSf https://github.com/Hadar01/ripindex/releases/latest/download/ripindex-installer.sh | sh
             ```
 
             **Windows**
             ```powershell
-            irm https://github.com/hadar01/ripindex/releases/latest/download/ripindex-installer.ps1 | iex
+            irm https://github.com/Hadar01/ripindex/releases/latest/download/ripindex-installer.ps1 | iex
             ```
 
             **Cargo**

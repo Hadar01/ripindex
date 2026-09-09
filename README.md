@@ -3,7 +3,7 @@
 **Indexed code and text search.** Point it at a directory once; every search after that
 returns in microseconds instead of rescanning the tree.
 
-[![CI](https://github.com/hadar01/ripindex/actions/workflows/ci.yml/badge.svg)](https://github.com/hadar01/ripindex/actions/workflows/ci.yml)
+[![CI](https://github.com/Hadar01/ripindex/actions/workflows/ci.yml/badge.svg)](https://github.com/Hadar01/ripindex/actions/workflows/ci.yml)
 [![crates.io](https://img.shields.io/crates/v/ripindex.svg)](https://crates.io/crates/ripindex)
 [![license](https://img.shields.io/badge/license-MIT%2FApache--2.0-blue.svg)](#license)
 
@@ -102,13 +102,13 @@ Ranking is BM25 (k1=1.2, b=0.75).
 **macOS / Linux**
 
 ```sh
-curl -LsSf https://github.com/hadar01/ripindex/releases/latest/download/ripindex-installer.sh | sh
+curl -LsSf https://github.com/Hadar01/ripindex/releases/latest/download/ripindex-installer.sh | sh
 ```
 
 **Windows**
 
 ```powershell
-irm https://github.com/hadar01/ripindex/releases/latest/download/ripindex-installer.ps1 | iex
+irm https://github.com/Hadar01/ripindex/releases/latest/download/ripindex-installer.ps1 | iex
 ```
 
 **Cargo** (needs Rust 1.89+)

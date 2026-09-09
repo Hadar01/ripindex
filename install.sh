@@ -1,7 +1,7 @@
 #!/bin/sh
 # ripindex installer for macOS and Linux.
 #
-#   curl -LsSf https://github.com/hadar01/ripindex/releases/latest/download/ripindex-installer.sh | sh
+#   curl -LsSf https://github.com/Hadar01/ripindex/releases/latest/download/ripindex-installer.sh | sh
 #
 # Options (flags or environment):
 #   --version X.Y.Z      install a specific release      (RIPINDEX_VERSION)
@@ -12,7 +12,7 @@
 # failure aborts without touching the install directory.
 set -eu
 
-REPO="hadar01/ripindex"
+REPO="Hadar01/ripindex"
 BIN="ripindex"
 VERSION="${RIPINDEX_VERSION:-}"
 DEST="${RIPINDEX_INSTALL_DIR:-}"

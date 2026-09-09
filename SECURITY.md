@@ -3,7 +3,7 @@
 ## Reporting
 
 Please report vulnerabilities privately through GitHub's
-[private vulnerability reporting](https://github.com/hadar01/ripindex/security/advisories/new)
+[private vulnerability reporting](https://github.com/Hadar01/ripindex/security/advisories/new)
 rather than a public issue. I'll acknowledge within a week.
 
 ## What ripindex is trusted with
