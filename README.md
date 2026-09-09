@@ -7,7 +7,31 @@ returns in microseconds instead of rescanning the tree.
 [![crates.io](https://img.shields.io/crates/v/ripindex.svg)](https://crates.io/crates/ripindex)
 [![license](https://img.shields.io/badge/license-MIT%2FApache--2.0-blue.svg)](#license)
 
-![ripindex demo](docs/img/demo.gif)
+```console
+$ cd ~/cpython                      # 4,579 files, 90 MiB of source. Indexed once.
+
+$ ripindex search --root . PyUnicode_FromString -n 3
+   7.398  Modules\_testcapi\vectorcall_limited.c:12
+          return [PyUnicode_FromString]("tp_call called");
+   7.201  Python\Python-tokenize.c:56
+          PyObject *filename = [PyUnicode_FromString]("<string>");
+   6.848  Modules\_testcapi\watchers.c:27
+          msg = [PyUnicode_FromString]("clear");
+3 of 3 matching files shown (via daemon); query took 749 µs
+
+$ ripindex search --root . 'asyncio AND subprocess' -n 3
+  12.565  Lib\test\test_asyncio\test_subprocess.py:9
+          from [asyncio] import [base_subprocess]
+  12.522  Doc\library\asyncio-subprocess.rst:3
+          .. [_asyncio]-[subprocess]:
+  12.356  Doc\library\asyncio-protocol.rst:82
+          [asyncio] implements transports for TCP, UDP, SSL, and [subprocess] pipes.
+3 of 3 matching files shown (via daemon); query took 918 µs
+```
+
+Real output, copied verbatim from a run on the same corpus the benchmarks below use.
+Matches are bracketed in the snippet, and highlighted in colour on a terminal. Paths
+are backslashed because this was captured on Windows - see [Benchmarks](#benchmarks).
 
 `ripgrep` is the right tool when you search a tree once. `ripindex` is for the other
 case: the same tree, over and over, all day. It builds a persistent inverted index in
