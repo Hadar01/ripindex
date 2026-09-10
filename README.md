@@ -117,6 +117,14 @@ irm https://github.com/Hadar01/ripindex/releases/latest/download/ripindex-instal
 cargo install ripindex
 ```
 
+**From source** — works with nothing but a Rust toolchain, and is the only route
+that doesn't depend on a published release:
+
+```sh
+git clone https://github.com/Hadar01/ripindex && cd ripindex
+cargo install --path . --bin ripindex
+```
+
 Prebuilt binaries: Linux x86_64/aarch64, macOS x86_64/aarch64, Windows x86_64. Every
 release publishes `SHA256SUMS`; the installers verify against it and refuse to install on
 a mismatch.
