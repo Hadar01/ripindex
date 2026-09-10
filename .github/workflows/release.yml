@@ -36,6 +36,10 @@ jobs:
             os: ubuntu-22.04
             apt: gcc-aarch64-linux-gnu
             linker: aarch64-linux-gnu-gcc
+            # The host x86_64 strip cannot process an aarch64 ELF. Without
+            # this the binary shipped unstripped: v0.1.1's aarch64 Linux
+            # asset was 10.7 MB against ~2 MB for every other target.
+            strip: aarch64-linux-gnu-strip
           - target: aarch64-apple-darwin
             os: macos-latest
           # Apple's toolchain targets both arches natively, so the Intel
@@ -79,7 +83,22 @@ jobs:
             cp "target/${{ matrix.target }}/release/ripindex.exe" "$stage/"
           else
             cp "target/${{ matrix.target }}/release/ripindex" "$stage/"
-            strip "$stage/ripindex" 2>/dev/null || true
+            # `|| true` on a bare `strip` is what hid the oversized aarch64
+            # asset: the wrong-arch strip failed silently and the debug
+            # symbols shipped. Use the target's own strip, and if stripping
+            # cannot happen, say so in the job summary rather than quietly
+            # publishing a 5x-larger download.
+            strip_tool="${{ matrix.strip || 'strip' }}"
+            if command -v "$strip_tool" >/dev/null 2>&1; then
+              before=$(wc -c < "$stage/ripindex")
+              if "$strip_tool" "$stage/ripindex"; then
+                echo "stripped with $strip_tool: $before -> $(wc -c < "$stage/ripindex") bytes"
+              else
+                echo "::warning::$strip_tool failed on ${{ matrix.target }}; shipping unstripped"
+              fi
+            else
+              echo "::warning::$strip_tool not found; shipping ${{ matrix.target }} unstripped"
+            fi
           fi
           cp README.md LICENSE-MIT LICENSE-APACHE CHANGELOG.md "$stage/"
           cp docs/FORMAT.md "$stage/FORMAT.md"
