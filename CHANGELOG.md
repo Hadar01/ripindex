@@ -5,6 +5,22 @@ All notable changes to this project are documented here. This project adheres to
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-09-10
+
+### Fixed
+
+- `cargo install ripindex` no longer puts `crash-harness` on your PATH. That
+  binary is a test fixture that deliberately SIGKILLs itself mid-commit to prove
+  crash recovery, and it was never meant to be installed - but `cargo install`
+  installs every declared binary, so 0.1.0 shipped it to anyone who installed
+  the crate. It is now gated behind a non-default `crash-harness` feature, which
+  is the only mechanism Cargo offers (there is no per-binary "do not install").
+  Building it yourself still works: `cargo build --bin crash-harness --features crash-harness`,
+  or just run `scripts/crash_loop.sh`, which passes the feature for you.
+
+  Found by installing the published 0.1.0 from crates.io on a clean machine
+  rather than trusting the local build.
+
 ## [0.1.0] - 2026-09-08
 
 First public release.
@@ -49,5 +65,6 @@ asserting all-or-nothing commits, `proptest` round-trips for every encoder, and
 socket-level daemon stress tests (concurrent queries during live merges, a 20-way autostart
 race, and SIGKILL-then-query-immediately recovery).
 
-[Unreleased]: https://github.com/Hadar01/ripindex/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/Hadar01/ripindex/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/Hadar01/ripindex/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/Hadar01/ripindex/releases/tag/v0.1.0

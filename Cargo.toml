@@ -1,6 +1,6 @@
 [package]
 name = "ripindex"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 rust-version = "1.89"
 description = "Indexed code and text search with a crash-safe on-disk index and a background daemon"
@@ -26,9 +26,20 @@ path = "src/lib.rs"
 name = "ripindex"
 path = "src/main.rs"
 
+# A test fixture, not a user-facing tool: it deliberately SIGKILLs itself
+# mid-commit to prove crash recovery. Gated behind a non-default feature
+# because `cargo install ripindex` installs *every* declared bin, and 0.1.0
+# consequently put `crash-harness` on the PATH of anyone who installed the
+# crate. Cargo has no per-binary "do not install", so a required feature that
+# is off by default is the mechanism.
 [[bin]]
 name = "crash-harness"
 path = "src/bin/crash_harness.rs"
+required-features = ["crash-harness"]
+
+[features]
+# Off by default: see the crash-harness bin above.
+crash-harness = []
 
 [dependencies]
 anyhow = "1"

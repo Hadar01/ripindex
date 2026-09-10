@@ -7,7 +7,7 @@ param(
 )
 $ErrorActionPreference = "Stop"
 $repo = Split-Path -Parent $PSScriptRoot
-cargo build --release --manifest-path (Join-Path $repo "Cargo.toml") --bin crash-harness
+cargo build --release --manifest-path (Join-Path $repo "Cargo.toml") --bin crash-harness --features crash-harness
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 & (Join-Path $repo "target\release\crash-harness.exe") run --dir $Dir --iterations $Iterations --seed $Seed --delay-us $DelayUs
 exit $LASTEXITCODE
