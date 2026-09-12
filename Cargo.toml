@@ -45,7 +45,7 @@ crash-harness = []
 anyhow = "1"
 clap = { version = "4", features = ["derive", "env"] }
 crc32fast = "1"
-notify = "6"
+notify = "8"
 xxhash-rust = { version = "0.8", features = ["xxh3"] }
 env_logger = "0.11"
 ignore = "0.4"
